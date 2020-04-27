@@ -51,7 +51,7 @@ Now you will be in Vina_Project folder, here, put your receptor_xyz.pdb file in 
 python3 autodock_python.py -pp all
 ```
 
-Now you should have following files:
+Now you should have the following files:
 - ./vina
 - ./vina_split
 - ./receptor/receptor_xyz.pdb (Use it to prepare and make a pdbqt file using autodock-tools. Keep it here even if you make a pdbqt)
