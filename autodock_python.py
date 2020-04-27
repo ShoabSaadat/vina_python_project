@@ -88,7 +88,7 @@ def autodock(whichones, reclist):
         print ('You have not provided correct receptor name. Enter "all" as an argument for all receptor results...')
 
 def info(reclist):
-    with open("autodock_python_help.md", 'r') as file_in:
+    with open("README.md", 'r') as file_in:
         mytext =""
         for line in file_in:
             mytext = mytext + str(line)
