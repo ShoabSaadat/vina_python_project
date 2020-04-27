@@ -54,7 +54,7 @@ python3 autodock_python.py -pp all
 Now you should have following files:
 ./vina
 ./vina_split
-./receptor/receptor_xyz.pdb (Use it to prepare and make a pdbqt file using autodock-tools)
+./receptor/receptor_xyz.pdb (Use it to prepare and make a pdbqt file using autodock-tools. Keep it here even if you make a pdbqt)
 ./ligands_sdfs/xyz.sdfs (Put your drug sdfs here)
 ./grid.txt (make from autodock tools and simply saving the gridbox output. Make sure to give it same name as your receptor)
 ./res (resources folder)
