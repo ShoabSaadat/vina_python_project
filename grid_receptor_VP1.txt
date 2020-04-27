@@ -1,0 +1,4 @@
+receptor
+spacing    1.0
+npts       24 26 26
+center    520.961 456.015 323.014
