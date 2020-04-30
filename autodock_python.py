@@ -1,8 +1,12 @@
 import os
 import sys
+from pathlib import Path
 import argparse
 import subprocess
 import shlex
+from pymol.cgo import *
+from pymol import cmd
+import pymol
 #subprocess.call(shlex.split('./test.sh param1 param2')) #reference it in sh as $1 onwards
 #subprocess.call(['./test.sh'])
 
@@ -27,7 +31,8 @@ def results(whichones, reclist):
     elif whichones in reclist:
         subprocess.call(shlex.split(f'./results.sh {whichones}'))
     else:
-        print ('You have not provided correct receptor name. Enter "all" as an argument for all receptor results...')
+        print ('You have not provided correct receptor name. \nEnter "all" as an argument for all receptor results or \ntype one of the following receptor names after -r argument: ')
+        print(reclist)
     
 def drugtable(whichones):
     if whichones == "all":
@@ -57,15 +62,37 @@ def setup(whichones):
     else:
         print ("Try giving the 'all' argument...")
 
+def prepareprot_scaffold(preload, presave, receptor, postload, postsave):
+    cmd.load(preload+receptor+postload)
+    cmd.remove('resn HOH')
+    cmd.h_add(selection='acceptors or donors')
+    cmd.save(presave+receptor+postsave)
+    subprocess.call(shlex.split(f'./prepareprot.sh {receptor}'))
+
 def prepareprot(whichones, reclist):
     if whichones == "all":
         for receptor in reclist:
-            subprocess.call(shlex.split(f'./prepareprot.sh {receptor}'))
-        print ('Job done...')
+            if Path('./receptor/rawpdbs/'+receptor+'_raw.pdb').exists():
+                processchoice = input("You have already processed the raw pdb, want to re-process? \nType 'raw' to re-process raw pdb or 'new' to process already processed file.\nType here: ")
+                if processchoice == "new":
+                    prepareprot_scaffold('./receptor/', './receptor/', receptor, '.pdb', '_modified.pdb')
+                else:
+                    prepareprot_scaffold('./receptor/rawpdbs/', './receptor/', receptor, '_raw.pdb', '_modified.pdb')
+            else:
+                prepareprot_scaffold('./receptor/', './receptor/', receptor, '.pdb', '_modified.pdb')
+        print ('Protein pdbqt file prepared...')
     elif whichones in reclist:
-        subprocess.call(shlex.split(f'./prepareprot.sh {whichones}'))
+        if Path('./receptor/rawpdbs/'+whichones+'_raw.pdb').exists():
+            processchoice = input("You have already processed the raw pdb, want to re-process? \nType 'raw' to re-process raw pdb or 'new' to process already processed file.\nType here: ")
+            if processchoice == "new":
+                prepareprot_scaffold('./receptor/', './receptor/', whichones, '.pdb', '_modified.pdb')
+            else:
+                prepareprot_scaffold('./receptor/rawpdbs/', './receptor/', whichones, '_raw.pdb', '_modified.pdb')
+        else:
+            prepareprot_scaffold('./receptor/', './receptor/', whichones, '.pdb', '_modified.pdb')
     else:
-        print ('You have not provided correct receptor name. Enter "all" as an argument for all receptor results...')
+        print ('You have not provided correct receptor name. \nEnter "all" as an argument for all receptor results or \ntype one of the following receptor names after -pp argument: ')
+        print(reclist)
     
 def autodock(whichones, reclist):
 
@@ -85,7 +112,8 @@ def autodock(whichones, reclist):
     elif whichones in reclist:
         subprocess.call(shlex.split(f'./autodock.sh {whichones} {size_x} {size_y} {size_z} {center_x} {center_y} {center_z}'))
     else:
-        print ('You have not provided correct receptor name. Enter "all" as an argument for all receptor results...')
+        print ('You have not provided correct receptor name. \nEnter "all" as an argument for all receptor results or \ntype one of the following receptor names after -ad argument: ')
+        print(reclist)
 
 def info(reclist):
     with open("README.md", 'r') as file_in:

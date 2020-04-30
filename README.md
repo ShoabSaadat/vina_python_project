@@ -42,7 +42,7 @@ python3 autodock_python.py -s all
 ## 3. Download typical directory structure for docking
 It creates a directory named Vina_Project and takes you in it.
 ```
-python3 autodock_python.py	-d all
+python3 autodock_python.py -d all
 ```
 
 ## 4. Prepare protein receptor
@@ -50,6 +50,11 @@ Now you will be in Vina_Project folder, here, put your receptor_xyz.pdb file in 
 ```
 python3 autodock_python.py -pp all
 ```
+It is a powerful protein preparation app which uses one of the following two systems base on availability on your system:
+- Pymol with openbabel
+In this case, it uses pymol to remove water molecules and add polar hydrogen while using openbabel for the charge addition and pdbqt conversion.
+- MGLTools and Audodock Tools
+This is an advanced conversion tool. It automatically removes water, adds hydrogen, merges nonpolar hydrogen charges, merges lone-pairs, remove chains composed entirely of residues of types other than the standard 20 amino acids, and adds gasteiger charges to the peptide molecule.
 
 Now you should have the following files:
 - ./vina
