@@ -8,6 +8,7 @@ from pymol.cgo import *
 from pymol import cmd
 import pymol
 import math
+import webbrowser
 #subprocess.call(shlex.split('./test.sh param1 param2')) #reference it in sh as $1 onwards
 #subprocess.call(['./test.sh'])
 
@@ -112,7 +113,6 @@ Type here: '''
     return residuestring
 
 def makegrid(whichones, reclist):
-
     extending = input("How wide the box extensions (Default is 5 angstroms) need to be?: ")
     try:
         extending = int(extending)
@@ -214,6 +214,23 @@ def autodock(whichones, reclist):
         print ('You have not provided correct receptor name. \nEnter "all" as an argument for all receptor results or \ntype one of the following receptor names after -ad argument: ')
         print(reclist)
 
+def get_search_query():
+    searchquery = input(
+    f'''\nYou can search for a certain kind of ligands using this tool.
+
+Type search term here: '''
+        )
+    searchstring = ""
+    for term in searchquery.split(' '):
+        searchstring += term+'%20'
+    searchstring = searchstring.strip()[:-3].strip()
+    return searchstring
+
+def searchchembl():
+    searchstring = get_search_query()
+    searchlink = f"https://www.ebi.ac.uk/chembl/g/#search_results/all/query={searchstring}"
+    webbrowser.open(searchlink) 
+
 def info(reclist):
     with open("README.md", 'r') as file_in:
         mytext =""
@@ -228,13 +245,14 @@ def info(reclist):
     print (
             '''Useful commands: 
             -s = Setup a linux system, 
-            -d = Download setup files, 
+            -d = Download setup files,
+            -sc = Search Chembl database for ligands,
             -pp = Prepare protein receptors, 
             -p = Make pdbqts of all ligands, 
             -g = Create grid-box file for automatic site identification for docking by providing key amino acid residue numbers.
             -ad = Do autodock process, 
             -r = Compile results, 
-            -dt = Make drug table for comparison, 
+            -dt = Make drug table for comparison,
             -i = Help and folder info. 
             You can add all / a receptor as addon parameters for specific action. \n'''
                         )
@@ -272,6 +290,10 @@ parser.add_argument('-g',
 					'--makegrid',
 					nargs='+',
 					help='Create grid box file for docking site')
+parser.add_argument('-sc',
+					'--searchchembl',
+                    action='store_true',
+					help='Search chembl database')
 parser.add_argument('-i',
 					'--info',
                     action='store_true',
@@ -302,6 +324,8 @@ def main():
 	elif args.makegrid:
 		reclist = mkreclist()
 		makegrid(sys.argv[2], reclist)
+	elif args.searchchembl:
+		searchchembl()
 
 if __name__ == '__main__': 
 	main()

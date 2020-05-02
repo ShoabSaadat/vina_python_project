@@ -30,7 +30,7 @@ I explain the steps to follow in order to get the docking pipeline flowing:
 sudo apt update
 sudo apt upgrade
 sudo apt install python3
-sudo apt install pip-python3
+sudo apt install python3-pip
 ```
 
 ## 2. Prepare the linux system using my python-tool
@@ -45,27 +45,25 @@ It creates a directory named Vina_Project and takes you in it.
 python3 autodock_python.py -d all
 ```
 
-## 4. Prepare protein receptor
-Now you will be in Vina_Project folder, here, put your receptor_xyz.pdb file in receptor folder to start
+## 4. Search Chembl Database
+You can search the Chembl database for selection of ligands from within command prompt
+```
+python3 autodock_python.py -sc
+```
+
+## 5. Prepare protein receptor
+Now you will be in Vina_Project folder, here, put your receptor_xyz.pdb file in receptor folder to start.
 ```
 python3 autodock_python.py -pp [receptor_name] / ["all"]
 ```
-It is a powerful protein preparation app which uses one of the following two systems base on availability on your system:
+You will be asked to select a number of chains to keep from your protein molecule. You can opt to keep all the chains. 
+It is a powerful protein preparation app which uses one of the following two systems for subsequent processing based on the availability on your system:
 - Pymol with openbabel
 In this case, it uses pymol to remove water molecules and add polar hydrogen while using openbabel for the charge addition and pdbqt conversion.
 - MGLTools and Audodock Tools
 This is an advanced conversion tool. It automatically removes water, adds hydrogen, merges nonpolar hydrogen charges, merges lone-pairs, remove chains composed entirely of residues of types other than the standard 20 amino acids, and adds gasteiger charges to the peptide molecule.
 
-Now you should have the following files:
-- ./vina
-- ./vina_split
-- ./receptor/receptor_xyz.pdb (Use it to prepare and make a pdbqt file using autodock-tools. Keep it here even if you make a pdbqt)
-- ./ligands_sdfs/xyz.sdfs (Put your drug sdfs here)
-- ./grid.txt (make from autodock tools and simply saving the gridbox output. Make sure to give it same name as your receptor)
-- ./res (resources folder)
-- ./ligands_pdbqt/ (Just a folder, will be populated after next step)
-
-## 5. Create PDBQTs from all ligands
+## 6. Create PDBQTs from all ligands
 It offers two options for ligand processing.
 - Using Open babel
 - Using Autodock Tools
@@ -74,26 +72,35 @@ It automatically removes water, adds hydrogen, merges nonpolar hydrogen charges 
 python3 autodock_python.py -p all
 ```
 
-## 6. Create a grid file for search box
+## 7. Create a grid file for search box
 Using this command, you can provide residue numbers of the most important amino acids in your receptor protein and it will create a search box grid file around those receptors. Residues can be based on the literature study or fetched from pocket analyzing softwares, such as, CASTp, PASS, Pocket-Finder, PocketPicker etc. When asked, residue numbers should be entered as seperated by space like "6 12 50".
 ```
 python3 autodock_python.py -g [receptor_name] / ["all"]
 ```
 This will create a text file with a prefix of "grid_" in the main app directory. This file will be later used automatically for the subsequent docking step.
 
-## 7. Start the AutoDock process
+Now you should have the following files:
+- ./vina
+- ./vina_split
+- ./receptor/receptor_xyz.pdbqt (Keep the pdb file in this folder as well even if you make a pdbqt)
+- ./ligands_sdfs/xyz.sdfs (Put your drug sdfs here)
+- ./grid.txt (you can make from autodock tools by simply saving the gridbox output as txt or use the tool above to autogenerate if you know the key residue numbers to make the box around)
+- ./res (resources folder)
+- ./ligands_pdbqt/ (should have been populated in an earlier step)
+
+## 8. Start the AutoDock process
 It does it for any pdbqt receptor in receptor folder and all ligand pdbqts in ligands_pdbqts folder
 ```
 python3 autodock_python.py -ad [receptor_name] / ["all"]
 ```
 
-## 8. Create result files
+## 9. Create result files
 It creates a results file for each receptor with finalized info
 ```
 python3 autodock_python.py -r [receptor_name] / ["all"]
 ```
 
-## 9. Make lookup drug table files
+## 10. Make lookup drug table files
 It creates three kinds of drugtables to compare results with actual ligand details
 ```
 python3 autodock_python.py -dt [receptor_name] / ["all"]
