@@ -7,6 +7,7 @@ import shlex
 from pymol.cgo import *
 from pymol import cmd
 import pymol
+import math
 #subprocess.call(shlex.split('./test.sh param1 param2')) #reference it in sh as $1 onwards
 #subprocess.call(['./test.sh'])
 
@@ -43,15 +44,23 @@ def drugtable(whichones):
 
 def mkpdbqts(whichones):
     if whichones == "all":
-        subprocess.call(['./mkpdbqts.sh'])
-        print ('Job done...')
+        algchoice = input(
+        '''How would you like to prepare your ligands: 
+        1. Use Open Babel (Fast)
+        2. Use Autodock Tools (Best from protein ligands)
+
+        Choose the option 1 or 2: '''
+        )
+        subprocess.call(shlex.split(f'./mkpdbqts.sh {algchoice}'))
+        
+        print ('Process has been run.')
     else:
         print ("Try giving the 'all' argument...")
 
 def download(whichones):
     if whichones == "all":
         subprocess.call(['./download.sh'])
-        print ('Job done...')
+        print ('\n----------------\nVina_Project folder downloaded. Please cd into that folder now.')
     else:
         print ("Try giving the 'all' argument...")
 
@@ -63,11 +72,102 @@ def setup(whichones):
         print ("Try giving the 'all' argument...")
 
 def prepareprot_scaffold(preload, presave, receptor, postload, postsave):
+    canproceed = False
+
     cmd.load(preload+receptor+postload)
-    cmd.remove('resn HOH')
-    cmd.h_add(selection='acceptors or donors')
-    cmd.save(presave+receptor+postsave)
-    subprocess.call(shlex.split(f'./prepareprot.sh {receptor}'))
+    all_chains = cmd.get_chains(receptor)
+    print(f'Which chains would you like to keep for protein {receptor}. It has following chains: ', all_chains)
+    selectedchain = input("Type the chain names seperated by space, \nif you want all chains, type 'all': ")
+    chainstoremove = set(all_chains) - set(selectedchain.split(' '))
+    if set(selectedchain.split(' ')).issubset(set(all_chains)):
+        for chain in chainstoremove:
+            cmd.remove('chain ' + chain)
+            print(f'Chain {chain} removed.')
+        canproceed = True
+    elif selectedchain == 'all':
+        print('All chains selected.')
+        canproceed = True
+    else:
+        print('Wrong chain selection. Type it like "A B 6" if you have three chains named A, B and 6')
+    
+    if canproceed:
+        cmd.remove('resn HOH')
+        cmd.h_add(selection='acceptors or donors')
+        cmd.save(presave+receptor+postsave)
+        subprocess.call(shlex.split(f'./prepareprot.sh {receptor}'))
+
+def get_residue_text(receptor):
+    residues = input(
+    f'''\nFor protein receptor: {receptor},
+Kindly write the important residues around which you would like your search grid box to be located. 
+Residues can be based on the literature study or fetched from pocket analyzing softwares, such as, CASTp, PASS, Pocket-Finder, PocketPicker etc.
+Enter the residue numbers seperated by space like "6 12 50"
+
+Type here: '''
+        )
+    residuestring = ""
+    for res in residues.split(' '):
+        residuestring += 'resi '+res+ ' + '
+    residuestring = residuestring.strip()[:-1].strip()
+    return residuestring
+
+def makegrid(whichones, reclist):
+
+    extending = input("How wide the box extensions (Default is 5 angstroms) need to be?: ")
+    try:
+        extending = int(extending)
+    except ValueError:
+        try:
+            extending = int(float(extending))
+        except ValueError:
+            extending = 5
+            print("Your input is not a number. It's a string. We chose 5 angstrom for your receptor.\n")
+
+    if whichones == "all":
+        for receptor in reclist:
+            residuestring = get_residue_text(receptor)
+            cmd.load('./receptor/'+receptor+'.pdbqt')
+            cmd.select("boxselection", (residuestring))
+
+            with open("grid_"+receptor+".txt", "w") as file_out:
+                file_out.write(getgridfile(receptor, "boxselection", extending))
+            print("\n", getgridfile(receptor, "boxselection", extending), "\n", f"Successfully created grid file for {receptor}.... \n")
+    elif whichones in reclist:
+        residuestring = get_residue_text(whichones)
+        cmd.load('./receptor/'+whichones+'.pdbqt')
+        cmd.select("boxselection", (residuestring))
+
+        with open("grid_"+whichones+".txt", "w") as file_out:
+            file_out.write(getgridfile(whichones, "boxselection", extending))
+        print("\n", getgridfile(whichones, "boxselection", extending), "\n", f"Successfully created grid file for {whichones}.... \n")
+    else:
+        print ('You have not provided correct receptor name. \nEnter "all" as an argument for all receptor results or \ntype one of the following receptor names after -r argument: ')
+        print(reclist)
+
+# getbox from cavity residues that reported in papers 
+def getgridfile(receptor, selection = "(sele)", extending = 5.0): 
+	cmd.hide("spheres")
+	cmd.show("spheres", selection)                                                                                                
+	([minX, minY, minZ],[maxX, maxY, maxZ]) = cmd.get_extent(selection)
+	minX = minX - float(extending)
+	minY = minY - float(extending)
+	minZ = minZ - float(extending)
+	maxX = maxX + float(extending)
+	maxY = maxY + float(extending)
+	maxZ = maxZ + float(extending)
+
+	SizeX = maxX - minX
+	SizeY = maxY - minY
+	SizeZ = maxZ - minZ
+	CenterX =  (maxX + minX)/2
+	CenterY =  (maxY + minY)/2
+	CenterZ =  (maxZ + minZ)/2
+
+	AutoDockBox =f'''-------- AutoDock Grid Map for {receptor} --------\n
+spacing 0.375 # spacing (A)
+npts {SizeX/0.375:.3f} {SizeY/0.375:.3f} {SizeZ/0.375:.3f}
+gridcenter {CenterX:.3f} {CenterY:.3f} {CenterZ:.3f}'''
+	return AutoDockBox
 
 def prepareprot(whichones, reclist):
     if whichones == "all":
@@ -95,7 +195,6 @@ def prepareprot(whichones, reclist):
         print(reclist)
     
 def autodock(whichones, reclist):
-
     if whichones == "all":
         for receptor in reclist:
             alllines=[]
@@ -128,13 +227,14 @@ def info(reclist):
     print ('\n')
     print (
             '''Useful commands: 
-            -s = setup a linux system, 
-            -d = download setup files, 
-            -pp = prepare protein receptors, 
-            -p = make pdbqts of all ligands, 
-            -ad = do autodock process, 
-            -r = compile results, 
-            -dt = make drug table for comparison, 
+            -s = Setup a linux system, 
+            -d = Download setup files, 
+            -pp = Prepare protein receptors, 
+            -p = Make pdbqts of all ligands, 
+            -g = Create grid-box file for automatic site identification for docking by providing key amino acid residue numbers.
+            -ad = Do autodock process, 
+            -r = Compile results, 
+            -dt = Make drug table for comparison, 
             -i = Help and folder info. 
             You can add all / a receptor as addon parameters for specific action. \n'''
                         )
@@ -168,6 +268,10 @@ parser.add_argument('-ad',
 					'--autodock',
 					nargs='+',
 					help='Prepare receptor proteins')
+parser.add_argument('-g',
+					'--makegrid',
+					nargs='+',
+					help='Create grid box file for docking site')
 parser.add_argument('-i',
 					'--info',
                     action='store_true',
@@ -195,6 +299,9 @@ def main():
 	elif args.info:
 		reclist = mkreclist()
 		info(reclist)
+	elif args.makegrid:
+		reclist = mkreclist()
+		makegrid(sys.argv[2], reclist)
 
 if __name__ == '__main__': 
 	main()

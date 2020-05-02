@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-wget https://de.cyverse.org/dl/d/53940A36-5E17-40DE-9E81-254B3216A25C/vina_prep.zip
-unzip vina_prep.zip
-mv ./vina_prep ./Vina_Project
-rm vina_prep.zip 
+wget https://github.com/ShoabSaadat/vina_python_project/archive/master.zip
+unzip master.zip
+mv ./vina_python_project-master ./Vina_Project
+rm master.zip 
 cd Vina_Project

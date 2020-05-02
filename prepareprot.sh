@@ -6,7 +6,7 @@ else
 mv ./receptor/$1.pdb ./receptor/rawpdbs/$1_raw.pdb
 fi
 
-grep ATOM ./receptor/$1_modified.pdb > ./receptor/$1.pdb #modified is preprocessed by pymol in python
+egrep '(REMARK|ATOM)' ./receptor/$1_modified.pdb > ./receptor/$1.pdb #modified is preprocessed by pymol in python
 rm ./receptor/$1_modified.pdb
 
 if [ -f $HOME/mgltools/bin/pythonsh ]; then
