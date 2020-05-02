@@ -1,6 +1,0 @@
-Filename Mode Affinity Dist_From_RMSD_lb Best_Mode_RMSD_ub
-Filename Mode Affinity Dist_From_RMSD_lb Best_Mode_RMSD_ub
-Filename Mode Affinity Dist_From_RMSD_lb Best_Mode_RMSD_ub
-Filename Mode Affinity Dist_From_RMSD_lb Best_Mode_RMSD_ub
-Filename Mode Affinity Dist_From_RMSD_lb Best_Mode_RMSD_ub
-Filename Mode Affinity Dist_From_RMSD_lb Best_Mode_RMSD_ub
