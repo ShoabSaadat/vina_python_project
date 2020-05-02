@@ -56,12 +56,13 @@ Now you will be in Vina_Project folder, here, put your receptor_xyz.pdb file in 
 ```
 python3 autodock_python.py -pp [receptor_name] / ["all"]
 ```
-You will be asked to select a number of chains to keep from your protein molecule. You can opt to keep all the chains. 
-It is a powerful protein preparation app which uses one of the following two systems for subsequent processing based on the availability on your system:
-- Pymol with openbabel
+It offers two options for ligand processing.It is a powerful protein preparation app which uses one of the following two systems for subsequent processing based on the availability on your system and your choice:
+- Using Pymol with openbabel
 In this case, it uses pymol to remove water molecules and add polar hydrogen while using openbabel for the charge addition and pdbqt conversion.
-- MGLTools and Audodock Tools
+- Using MGLTools and Audodock Tools
 This is an advanced conversion tool. It automatically removes water, adds hydrogen, merges nonpolar hydrogen charges, merges lone-pairs, remove chains composed entirely of residues of types other than the standard 20 amino acids, and adds gasteiger charges to the peptide molecule.
+
+Once you select an option, will be asked to select a number of chains to keep from your protein molecule. You can opt to keep all the chains. It then proceeds to prepare your receptor.
 
 ## 6. Create PDBQTs from all ligands
 It offers two options for ligand processing.
