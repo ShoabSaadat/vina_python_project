@@ -72,31 +72,6 @@ def setup(whichones):
     else:
         print ("Try giving the 'all' argument...")
 
-def prepareprot_scaffold(preload, presave, receptor, postload, postsave):
-    canproceed = False
-
-    cmd.load(preload+receptor+postload)
-    all_chains = cmd.get_chains(receptor)
-    print(f'Which chains would you like to keep for protein {receptor}. It has following chains: ', all_chains)
-    selectedchain = input("Type the chain names seperated by space, \nif you want all chains, type 'all': ")
-    chainstoremove = set(all_chains) - set(selectedchain.split(' '))
-    if set(selectedchain.split(' ')).issubset(set(all_chains)):
-        for chain in chainstoremove:
-            cmd.remove('chain ' + chain)
-            print(f'Chain {chain} removed.')
-        canproceed = True
-    elif selectedchain == 'all':
-        print('All chains selected.')
-        canproceed = True
-    else:
-        print('Wrong chain selection. Type it like "A B 6" if you have three chains named A, B and 6')
-    
-    if canproceed:
-        cmd.remove('resn HOH')
-        cmd.h_add(selection='acceptors or donors')
-        cmd.save(presave+receptor+postsave)
-        subprocess.call(shlex.split(f'./prepareprot.sh {receptor}'))
-
 def get_residue_text(receptor):
     residues = input(
     f'''\nFor protein receptor: {receptor},
@@ -163,38 +138,81 @@ def getgridfile(receptor, selection = "(sele)", extending = 5.0):
 	CenterY =  (maxY + minY)/2
 	CenterZ =  (maxZ + minZ)/2
 
-	AutoDockBox =f'''-------- AutoDock Grid Map for {receptor} --------\n
+	AutoDockBox =f'''-------- AutoDock Grid Map for {receptor} --------
 spacing 0.375 # spacing (A)
 npts {SizeX/0.375:.3f} {SizeY/0.375:.3f} {SizeZ/0.375:.3f}
 gridcenter {CenterX:.3f} {CenterY:.3f} {CenterZ:.3f}'''
 	return AutoDockBox
 
+def prepareprot_scaffold(preload, presave, receptor, postload, postsave, algchoice):
+    canproceed = False
+
+    cmd.load(preload+receptor+postload)
+    all_chains = cmd.get_chains(receptor)
+    print(f'Which chains would you like to keep for protein {receptor}. It has following chains: ', all_chains)
+    selectedchain = input("Type the chain names seperated by space, \nif you want all chains, type 'all': ")
+    chainstoremove = set(all_chains) - set(selectedchain.split(' '))
+    if set(selectedchain.split(' ')).issubset(set(all_chains)):
+        for chain in chainstoremove:
+            cmd.remove('chain ' + chain)
+            print(f'Chain {chain} removed.')
+        canproceed = True
+    elif selectedchain == 'all':
+        print('All chains selected.')
+        canproceed = True
+    else:
+        print('Wrong chain selection. Type it like "A B 6" if you have three chains named A, B and 6')
+    
+    if canproceed:
+        cmd.remove('resn HOH')
+        #cmd.h_add(selection='acceptors or donors')
+        cmd.save(presave+receptor+postsave)
+        subprocess.call(shlex.split(f'./prepareprot.sh {receptor} {algchoice}'))
+
 def prepareprot(whichones, reclist):
+    algchoice = input(
+    '''How would you like to prepare your ligands: 
+1. Use Open Babel (Fast)
+2. Use Autodock Tools (Best from protein ligands)
+
+Choose the option 1 or 2: '''
+        )
+
     if whichones == "all":
         for receptor in reclist:
             if Path('./receptor/rawpdbs/'+receptor+'_raw.pdb').exists():
                 processchoice = input("You have already processed the raw pdb, want to re-process? \nType 'raw' to re-process raw pdb or 'new' to process already processed file.\nType here: ")
                 if processchoice == "new":
-                    prepareprot_scaffold('./receptor/', './receptor/', receptor, '.pdb', '_modified.pdb')
+                    prepareprot_scaffold('./receptor/', './receptor/', receptor, '.pdb', '_modified.pdb', algchoice)
                 else:
-                    prepareprot_scaffold('./receptor/rawpdbs/', './receptor/', receptor, '_raw.pdb', '_modified.pdb')
+                    prepareprot_scaffold('./receptor/rawpdbs/', './receptor/', receptor, '_raw.pdb', '_modified.pdb', algchoice)
             else:
-                prepareprot_scaffold('./receptor/', './receptor/', receptor, '.pdb', '_modified.pdb')
+                prepareprot_scaffold('./receptor/', './receptor/', receptor, '.pdb', '_modified.pdb', algchoice)
         print ('Protein pdbqt file prepared...')
     elif whichones in reclist:
         if Path('./receptor/rawpdbs/'+whichones+'_raw.pdb').exists():
             processchoice = input("You have already processed the raw pdb, want to re-process? \nType 'raw' to re-process raw pdb or 'new' to process already processed file.\nType here: ")
             if processchoice == "new":
-                prepareprot_scaffold('./receptor/', './receptor/', whichones, '.pdb', '_modified.pdb')
+                prepareprot_scaffold('./receptor/', './receptor/', whichones, '.pdb', '_modified.pdb', algchoice)
             else:
-                prepareprot_scaffold('./receptor/rawpdbs/', './receptor/', whichones, '_raw.pdb', '_modified.pdb')
+                prepareprot_scaffold('./receptor/rawpdbs/', './receptor/', whichones, '_raw.pdb', '_modified.pdb', algchoice)
         else:
-            prepareprot_scaffold('./receptor/', './receptor/', whichones, '.pdb', '_modified.pdb')
+            prepareprot_scaffold('./receptor/', './receptor/', whichones, '.pdb', '_modified.pdb', algchoice)
     else:
         print ('You have not provided correct receptor name. \nEnter "all" as an argument for all receptor results or \ntype one of the following receptor names after -pp argument: ')
         print(reclist)
     
 def autodock(whichones, reclist):
+    exhaustiveness = input("What should be the exhaustiveness (Default is 8) level ?: ")
+    try:
+        exhaustiveness = int(exhaustiveness)
+    except ValueError:
+        try:
+            exhaustiveness = int(float(exhaustiveness))
+        except ValueError:
+            exhaustiveness = 8
+            print("Your input is not a number. It's a string. We chose 8 for the exhaustiveness.\n")
+
     if whichones == "all":
         for receptor in reclist:
             alllines=[]
@@ -206,10 +224,10 @@ def autodock(whichones, reclist):
             center_x = alllines[3][1]
             center_y = alllines[3][2]
             center_z = alllines[3][3]
-            subprocess.call(shlex.split(f'./autodock.sh {receptor} {size_x} {size_y} {size_z} {center_x} {center_y} {center_z}'))
+            subprocess.call(shlex.split(f'./autodock.sh {receptor} {size_x} {size_y} {size_z} {center_x} {center_y} {center_z} {exhaustiveness}'))
         print ('Autodock Job done...')
     elif whichones in reclist:
-        subprocess.call(shlex.split(f'./autodock.sh {whichones} {size_x} {size_y} {size_z} {center_x} {center_y} {center_z}'))
+        subprocess.call(shlex.split(f'./autodock.sh {whichones} {size_x} {size_y} {size_z} {center_x} {center_y} {center_z} {exhaustiveness}'))
     else:
         print ('You have not provided correct receptor name. \nEnter "all" as an argument for all receptor results or \ntype one of the following receptor names after -ad argument: ')
         print(reclist)
